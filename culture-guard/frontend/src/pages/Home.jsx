@@ -1,11 +1,13 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { ShieldCheck, MessageSquare, Zap, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 
 function Home() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden transition-colors duration-300">
@@ -19,29 +21,29 @@ function Home() {
         <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-purple-100 dark:bg-purple-600/10 rounded-full blur-[100px] -z-10 transition-colors duration-300" />
 
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
             <span className="inline-block py-1 px-3 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-6 transition-colors">
-              AI-Powered Cultural Intelligence
+              {t('hero.tagline')}
             </span>
             <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 text-slate-900 dark:text-white transition-colors">
-              Speak the Language of <br />
+              {t('hero.title_start')} <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
-                Culture & Trust
+                {t('hero.title_end')}
               </span>
             </h1>
             <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed transition-colors">
-              Don't just translate words. Translate intent. Chater ensures your business messages are culturally safe, polite, and effective anywhere in the world.
+              {t('hero.description')}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <button onClick={() => navigate('/analyzer')} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-bold text-lg transition shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
-                Analyze My Message <ArrowRight className="w-5 h-5" />
+                {t('hero.cta')} <ArrowRight className="w-5 h-5" />
               </button>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
       </section>
 
@@ -49,17 +51,17 @@ function Home() {
       <section id="features" className="py-24 bg-slate-50 dark:bg-slate-900/50 relative border-y border-slate-200 dark:border-slate-800 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4 text-slate-900 dark:text-white transition-colors">Why use Chater?</h2>
-            <p className="text-slate-600 dark:text-slate-400 transition-colors">Stop guessing. Start connecting.</p>
+            <h2 className="text-3xl font-bold mb-4 text-slate-900 dark:text-white transition-colors">{t('features.title')}</h2>
+            <p className="text-slate-600 dark:text-slate-400 transition-colors">{t('features.subtitle')}</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: ShieldCheck, title: "Risk Detection", desc: "Instantly spot phrases that might be offensive or misunderstood in your target country." },
-              { icon: MessageSquare, title: "Smart Rewrites", desc: "Get AI-generated alternative phrasings that sound natural and professional to locals." },
-              { icon: Zap, title: "Real-time Feedback", desc: "Analyze tone, hierarchy, and formality in milliseconds before you hit send." }
+              { icon: ShieldCheck, title: t('features.risk_detection.title'), desc: t('features.risk_detection.desc') },
+              { icon: MessageSquare, title: t('features.smart_rewrites.title'), desc: t('features.smart_rewrites.desc') },
+              { icon: Zap, title: t('features.real_time_feedback.title'), desc: t('features.real_time_feedback.desc') }
             ].map((feature, i) => (
-              <motion.div 
+              <Motion.div 
                 key={i}
                 whileHover={{ y: -5 }}
                 className="p-8 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-500/50 transition shadow-lg transition-colors"
@@ -69,7 +71,7 @@ function Home() {
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white transition-colors">{feature.title}</h3>
                 <p className="text-slate-600 dark:text-slate-400 leading-relaxed transition-colors">{feature.desc}</p>
-              </motion.div>
+              </Motion.div>
             ))}
           </div>
         </div>
@@ -88,9 +90,9 @@ function Home() {
             <div className="hidden md:block absolute top-12 left-0 w-full h-0.5 bg-slate-200 dark:bg-slate-800 -z-10 transition-colors" />
 
             {[
-              { step: "1", title: "Select Region", desc: "Choose the country or culture you are communicating with." },
-              { step: "2", title: "Draft Message", desc: "Type your email, Slack message, or proposal as you normally would." },
-              { step: "3", title: "Get Analysis", desc: "Our AI checks for cultural nuance, risks, and offers polite alternatives." }
+              { step: "1", title: t('how_it_works.step1.title'), desc: t('how_it_works.step1.desc') },
+              { step: "2", title: t('how_it_works.step2.title'), desc: t('how_it_works.step2.desc') },
+              { step: "3", title: t('how_it_works.step3.title'), desc: t('how_it_works.step3.desc') }
             ].map((item, i) => (
               <div key={i} className="text-center relative bg-white dark:bg-slate-900 p-4 transition-colors">
                 <div className="w-16 h-16 mx-auto bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-6 shadow-lg relative z-10 transition-colors">
@@ -106,8 +108,8 @@ function Home() {
 
       {/* --- Footer --- */}
       <footer className="py-8 text-center text-slate-500 text-sm border-t border-slate-200 dark:border-slate-800 transition-colors">
-        <p>© 2026 Chater AI. All rights reserved.</p>
-        <p className="mt-2">Built with ❤️ in Codespaces</p>
+        <p>{t('footer.copyright')}</p>
+        <p className="mt-2">{t('footer.built_with')}</p>
       </footer>
 
     </div>

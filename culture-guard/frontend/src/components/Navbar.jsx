@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Globe, Menu, X, Moon, Sun } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDark, setIsDark] = useState(true); // Default to dark as per original design
+  const [isDark, setIsDark] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme !== 'light'; // Default to true (dark) if not 'light'
+  });
   const location = useLocation();
 
   useEffect(() => {
-    // Check system preference or localStorage on mount
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-      setIsDark(false);
-      document.documentElement.classList.remove('dark');
-    } else {
-      setIsDark(true);
+    if (isDark) {
       document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  }, []);
+  }, [isDark]);
 
   const toggleTheme = () => {
     const newTheme = !isDark;
@@ -52,6 +52,9 @@ const Navbar = () => {
               </>
             )}
             
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* Theme Toggle */}
             <button 
               onClick={toggleTheme} 
@@ -87,7 +90,7 @@ const Navbar = () => {
       {/* Mobile Menu Dropdown */}
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div 
+          <Motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -106,7 +109,11 @@ const Navbar = () => {
             >
               Try Now
             </Link>
-          </motion.div>
+            
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-center">
+               <LanguageSwitcher />
+            </div>
+          </Motion.div>
         )}
       </AnimatePresence>
     </nav>

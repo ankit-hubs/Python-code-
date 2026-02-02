@@ -35,6 +35,13 @@ class AnalysisResponse(BaseModel):
     reasoning: str
     alternatives: list[str]
 
+SUPPORTED_COUNTRIES = [
+  "United States", "Japan", "Germany", "Brazil", "India", "France", 
+  "China", "South Korea", "United Arab Emirates", "Saudi Arabia", 
+  "United Kingdom", "Spain", "Mexico", "Canada", "Australia", 
+  "Netherlands", "Sweden", "Singapore", "Italy", "Russia"
+]
+
 # --- Gemini API Setup ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -56,19 +63,39 @@ def call_gemini_api(text: str, country: str):
         # Use gemini-2.5-flash
         model = genai.GenerativeModel('gemini-2.5-flash')
         
-        prompt = f"""
-        You are a Cultural Communication Expert. Analyze this message for a professional business context in {country}.
-        
-        Message: "{text}"
-        
-        Return a valid JSON object with EXACTLY these fields:
-        - "translated_meaning": A short string explaining what this message implies to a local in {country}.
-        - "risk_level": One of "✅ Safe & Culturally Appropriate", "⚠️ Potentially Misunderstood", or "❌ Culturally Risky / Offensive".
-        - "reasoning": A 1-2 sentence explanation of why, referencing specific cultural norms.
-        - "alternatives": A list of 2-3 safer/better rewrites (strings).
-        
-        Output only the raw JSON string. Do not use Markdown code blocks.
-        """
+        if country == "Select All Countries":
+            prompt = f"""
+            You are a Cultural Communication Expert. Analyze this message for a professional business context across these countries: {', '.join(SUPPORTED_COUNTRIES)}.
+            
+            Message: "{text}"
+            
+            Identify ANY countries where this message might be "⚠️ Potentially Misunderstood" or "❌ Culturally Risky / Offensive".
+            
+            Return a valid JSON LIST of objects. Each object must have:
+            - "country": The name of the specific country.
+            - "translated_meaning": A short string explaining the local implication.
+            - "risk_level": One of "⚠️ Potentially Misunderstood", or "❌ Culturally Risky / Offensive".
+            - "reasoning": A 1-2 sentence explanation of why.
+            - "alternatives": A list of 2-3 safer/better rewrites (strings).
+            
+            If the message is completely safe in ALL listed countries, return a single object in the list with "country": "Global", "risk_level": "✅ Safe & Culturally Appropriate", and standard fields.
+            
+            Output only the raw JSON string (no markdown).
+            """
+        else:
+            prompt = f"""
+            You are a Cultural Communication Expert. Analyze this message for a professional business context in {country}.
+            
+            Message: "{text}"
+            
+            Return a valid JSON object with EXACTLY these fields:
+            - "translated_meaning": A short string explaining what this message implies to a local in {country}.
+            - "risk_level": One of "✅ Safe & Culturally Appropriate", "⚠️ Potentially Misunderstood", or "❌ Culturally Risky / Offensive".
+            - "reasoning": A 1-2 sentence explanation of why, referencing specific cultural norms.
+            - "alternatives": A list of 2-3 safer/better rewrites (strings).
+            
+            Output only the raw JSON string. Do not use Markdown code blocks.
+            """
 
         response = model.generate_content(prompt)
         
@@ -81,11 +108,19 @@ def call_gemini_api(text: str, country: str):
         if clean_text.endswith("```"):
             clean_text = clean_text[:-3]
             
-        result = json.loads(clean_text)
+        data = json.loads(clean_text)
         
-        # Ensure country field exists
-        result["country"] = country
-        return result
+        # Normalize to list
+        if isinstance(data, dict):
+            if country != "Select All Countries":
+                data["country"] = country
+            results = [data]
+        elif isinstance(data, list):
+            results = data
+        else:
+            results = []
+
+        return results
 
     except Exception as e:
         print(f"❌ Gemini API Failed: {e}")
@@ -94,120 +129,144 @@ def call_gemini_api(text: str, country: str):
 # --- Enhanced Mock Service (Rule-Based AI) ---
 def mock_analyze(text: str, country: str):
     text_lower = text.lower()
+    results = []
     
-    # Default Safe Response
-    result = {
-        "country": country,
-        "translated_meaning": "The message appears direct and clear.",
-        "risk_level": "✅ Safe & Culturally Appropriate",
-        "reasoning": f"This message generally aligns with standard business communication, though cultural nuances in {country} always favor politeness.",
-        "alternatives": [
-            f"Greetings, {text}",
-            f"{text} Thank you.",
-            f"Dear Team, {text}"
-        ]
-    }
-
-    # --- Global Heuristics ---
+    countries_to_check = SUPPORTED_COUNTRIES if country == "Select All Countries" else [country]
     
-    # 1. SHOUTING CHECK
-    if text.isupper() and len(text) > 5:
-        result.update({
-            "translated_meaning": "You are shouting or angry.",
-            "risk_level": "❌ Culturally Risky / Offensive",
-            "reasoning": "Using all caps is universally perceived as aggressive shouting.",
-            "alternatives": [text.capitalize(), "I would like to emphasize this point: " + text.lower()]
-        })
-        return result
+    # Common Logic Helpers
+    def check_country(c):
+        res = {
+            "country": c,
+            "translated_meaning": "The message appears direct and clear.",
+            "risk_level": "✅ Safe & Culturally Appropriate",
+            "reasoning": f"This message generally aligns with standard business communication in {c}.",
+            "alternatives": []
+        }
+        
+        is_risky = False
 
-    # 2. Urgent/Aggressive Keywords
-    urgent_words = ["asap", "urgently", "now", "immediately", "deadline"]
-    if any(w in text_lower for w in urgent_words):
-        result.update({
-            "translated_meaning": "You are demanding immediate attention, potentially disregarding the recipient's schedule.",
-            "risk_level": "⚠️ Potentially Misunderstood",
-            "reasoning": f"In {country}, as in many cultures, demanding urgency can imply poor planning on your part or lack of respect for their time.",
-            "alternatives": [
-                text.replace("ASAP", "at your earliest convenience").replace("immediately", "when possible"),
-                "Could you please prioritize this if time permits?",
-                "We are working with a tight timeline and would appreciate your help."
-            ]
-        })
-
-    # --- Country Specific Rules ---
-
-    if country == "Japan":
-        if "no" in text_lower.split() or "cannot" in text_lower or "won't" in text_lower:
-            result.update({
-                "translated_meaning": "A direct refusal or confrontation.",
+        # 1. SHOUTING CHECK (Global)
+        if text.isupper() and len(text) > 5:
+            res.update({
+                "translated_meaning": "You are shouting or angry.",
                 "risk_level": "❌ Culturally Risky / Offensive",
-                "reasoning": "Direct refusal is avoided in Japan to maintain harmony. Use 'soft' refusals like 'it is difficult'.",
-                "alternatives": ["This might be difficult to achieve.", "We would like to consider this, but there are challenges."]
+                "reasoning": "Using all caps is universally perceived as aggressive shouting.",
+                "alternatives": [text.capitalize(), "I would like to emphasize this point: " + text.lower()]
             })
-        elif "?" not in text and len(text.split()) < 5:
-            result.update({
-                "translated_meaning": "A blunt statement or command.",
+            return res, True
+
+        # 2. Urgent/Aggressive Keywords (Global-ish)
+        urgent_words = ["asap", "urgently", "now", "immediately", "deadline"]
+        if any(w in text_lower for w in urgent_words):
+            res.update({
+                "translated_meaning": "You are demanding immediate attention.",
                 "risk_level": "⚠️ Potentially Misunderstood",
-                "reasoning": "Short, direct sentences can sound cold. Japanese business emails are often longer and more indirect.",
-                "alternatives": [f"I am writing to share that {text}", f"Regarding the matter of: {text}"]
+                "reasoning": f"In {c}, demanding urgency can imply poor planning or lack of respect.",
+                "alternatives": [
+                    text.replace("ASAP", "at your earliest convenience"),
+                    "Could you please prioritize this?"
+                ]
             })
+            is_risky = True
 
-    elif country == "China":
-        if "problem" in text_lower or "issue" in text_lower or "wrong" in text_lower:
-             result.update({
-                "translated_meaning": "You are pointing out a failure, potentially causing loss of face.",
-                "risk_level": "❌ Culturally Risky / Offensive",
-                "reasoning": "Criticism should be delivered privately and subtly to preserve 'mianzi' (face).",
-                "alternatives": ["We see an area for improvement here.", "Let's look at how we can optimize this result."]
-            })
-    
-    elif country == "India":
-        if "no" in text_lower.split():
-            result.update({
-                 "translated_meaning": "A harsh rejection.",
-                 "risk_level": "⚠️ Potentially Misunderstood",
-                 "reasoning": "In India, 'no' is often softened to 'I will try' or 'let me check' to maintain the relationship.",
-                 "alternatives": ["I will see what I can do, but it may be tough.", "Let me get back to you on this."]
-            })
+        # Country Specifics
+        if c == "Japan":
+            if "no" in text_lower.split() or "cannot" in text_lower or "won't" in text_lower:
+                res.update({
+                    "translated_meaning": "A direct refusal or confrontation.",
+                    "risk_level": "❌ Culturally Risky / Offensive",
+                    "reasoning": "Direct refusal is avoided in Japan.",
+                    "alternatives": ["This might be difficult to achieve."]
+                })
+                is_risky = True
+            elif "?" not in text and len(text.split()) < 5:
+                res.update({
+                    "translated_meaning": "A blunt statement or command.",
+                    "risk_level": "⚠️ Potentially Misunderstood",
+                    "reasoning": "Short, direct sentences can sound cold.",
+                    "alternatives": [f"I am writing to share that {text}"]
+                })
+                is_risky = True
 
-    elif country in ["United Arab Emirates", "Saudi Arabia"]:
-        if len(text.split()) < 10 and not any(x in text_lower for x in ["hello", "hi", "dear", "salam", "greetings"]):
-             result.update({
-                "translated_meaning": "You are strictly transactional and ignoring the relationship.",
-                "risk_level": "⚠️ Potentially Misunderstood",
-                "reasoning": "Relationship building is crucial. Jumping straight to business without a greeting is considered rude.",
-                "alternatives": [f"As-salamu alaykum. {text}", f"I hope this message finds you well. {text}"]
-            })
-    
-    elif country == "Germany":
-        if "feel" in text_lower or "guess" in text_lower:
-             result.update({
-                "translated_meaning": "You are unprepared or relying on emotion rather than facts.",
-                "risk_level": "⚠️ Potentially Misunderstood",
-                "reasoning": "German business culture values objectivity, facts, and precision over feelings or vague estimates.",
-                "alternatives": ["The data indicates that...", "Based on the analysis..."]
-            })
-            
-    elif country == "United States":
-        if "perhaps" in text_lower or "maybe" in text_lower:
-             result.update({
-                "translated_meaning": "You are unsure or lack confidence.",
-                "risk_level": "⚠️ Potentially Misunderstood",
-                "reasoning": "US business culture rewards directness and confidence. Vagueness can be seen as incompetence.",
-                "alternatives": ["I recommend we do X.", "The best course of action is..."]
-            })
+        elif c == "China":
+            if "problem" in text_lower or "issue" in text_lower:
+                 res.update({
+                    "translated_meaning": "Pointing out a failure publicly.",
+                    "risk_level": "❌ Culturally Risky / Offensive",
+                    "reasoning": "Criticism should be subtle to preserve 'mianzi' (face).",
+                    "alternatives": ["We see an area for improvement here."]
+                })
+                 is_risky = True
+        
+        elif c == "India":
+            if "no" in text_lower.split():
+                res.update({
+                     "translated_meaning": "A harsh rejection.",
+                     "risk_level": "⚠️ Potentially Misunderstood",
+                     "reasoning": "'No' is often softened in India.",
+                     "alternatives": ["I will see what I can do."]
+                })
+                is_risky = True
 
-    # 3. Dynamic Alternatives Generation (If empty)
-    if not result["alternatives"]:
-        result["alternatives"] = [
-            f"Kindly note: {text}",
-            f"I wanted to inform you that {text}",
-            f"With respect to our project, {text}"
-        ]
+        elif c in ["United Arab Emirates", "Saudi Arabia"]:
+            if len(text.split()) < 10 and not any(x in text_lower for x in ["hello", "hi", "dear", "salam"]):
+                 res.update({
+                    "translated_meaning": "Strictly transactional, ignoring relationship.",
+                    "risk_level": "⚠️ Potentially Misunderstood",
+                    "reasoning": "Greetings are crucial before business.",
+                    "alternatives": [f"As-salamu alaykum. {text}"]
+                })
+                 is_risky = True
+        
+        elif c == "Germany":
+            if "feel" in text_lower or "guess" in text_lower:
+                 res.update({
+                    "translated_meaning": "Unprepared or emotional.",
+                    "risk_level": "⚠️ Potentially Misunderstood",
+                    "reasoning": "German culture values facts over feelings.",
+                    "alternatives": ["The data indicates that..."]
+                })
+                 is_risky = True
 
-    return result
+        elif c == "United States":
+            if "perhaps" in text_lower or "maybe" in text_lower:
+                 res.update({
+                    "translated_meaning": "Unsure or lacking confidence.",
+                    "risk_level": "⚠️ Potentially Misunderstood",
+                    "reasoning": "US culture rewards directness.",
+                    "alternatives": ["I recommend we do X."]
+                })
+                 is_risky = True
 
-@app.post("/analyze", response_model=AnalysisResponse)
+        if not res["alternatives"]:
+            res["alternatives"] = [f"Kindly note: {text}", f"Regarding: {text}"]
+
+        return res, is_risky
+
+    # Logic for Select All vs Single
+    if country == "Select All Countries":
+        risky_results = []
+        for c in countries_to_check:
+            res, is_risky = check_country(c)
+            if is_risky:
+                risky_results.append(res)
+        
+        if risky_results:
+            return risky_results
+        else:
+            # If nothing is risky, return a global safe
+            return [{
+                "country": "Global",
+                "translated_meaning": "The message appears direct and universally acceptable.",
+                "risk_level": "✅ Safe & Culturally Appropriate",
+                "reasoning": "No significant cultural risks detected across supported regions.",
+                "alternatives": []
+            }]
+    else:
+        res, _ = check_country(country)
+        return [res]
+
+@app.post("/analyze", response_model=list[AnalysisResponse])
 async def analyze_message(request: MessageRequest):
     return call_gemini_api(request.text, request.country)
 
