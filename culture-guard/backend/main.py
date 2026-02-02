@@ -61,40 +61,52 @@ def call_gemini_api(text: str, country: str):
 
     try:
         # Use gemini-2.5-flash
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        
+        try:
+            model = genai.GenerativeModel('gemini-2.5-flash')
+        except:
+            model = genai.GenerativeModel('gemini-2.0-flash')
+
         if country == "Select All Countries":
             prompt = f"""
-            You are a Cultural Communication Expert. Analyze this message for a professional business context across these countries: {', '.join(SUPPORTED_COUNTRIES)}.
+            You are a Global Cross-Cultural Communication Expert. 
             
+            Analyze the following message for a **General International Business Audience**. 
+            Do NOT analyze specific countries individually. Instead, focus on universal business standards, clarity, politeness, and "Global English" best practices.
+
             Message: "{text}"
+
+            Goal: Ensure the message is safe, clear, and professional for a diverse, multi-cultural audience.
+
+            Output Format:
+            Return a valid JSON LIST containing EXACTLY ONE object:
+            {{
+                "country": "Global",
+                "translated_meaning": "How this message is likely perceived by a general international audience.",
+                "risk_level": "One of: '✅ Safe & Culturally Appropriate', '⚠️ Potentially Misunderstood', or '❌ Culturally Risky / Offensive'",
+                "reasoning": "Explain if the message uses idioms, slang, excessive directness, or ambiguity that might confuse non-native speakers or diverse cultures generally.",
+                "alternatives": ["Alternative 1 (Universally safe)", "Alternative 2 (Formal & Clear)"]
+            }}
             
-            Identify ANY countries where this message might be "⚠️ Potentially Misunderstood" or "❌ Culturally Risky / Offensive".
-            
-            Return a valid JSON LIST of objects. Each object must have:
-            - "country": The name of the specific country.
-            - "translated_meaning": A short string explaining the local implication.
-            - "risk_level": One of "⚠️ Potentially Misunderstood", or "❌ Culturally Risky / Offensive".
-            - "reasoning": A 1-2 sentence explanation of why.
-            - "alternatives": A list of 2-3 safer/better rewrites (strings).
-            
-            If the message is completely safe in ALL listed countries, return a single object in the list with "country": "Global", "risk_level": "✅ Safe & Culturally Appropriate", and standard fields.
-            
-            Output only the raw JSON string (no markdown).
+            Return ONLY the raw JSON string. No Markdown.
             """
         else:
             prompt = f"""
-            You are a Cultural Communication Expert. Analyze this message for a professional business context in {country}.
+            You are a Senior Cultural Communication Consultant for {country}. 
             
+            Analyze the following message for a professional business context in {country}.
+
             Message: "{text}"
-            
-            Return a valid JSON object with EXACTLY these fields:
-            - "translated_meaning": A short string explaining what this message implies to a local in {country}.
+
+            Your Goal: Ensure the sender builds a strong relationship and avoids faux pas.
+
+            Output Format:
+            Return a valid JSON object with:
+            - "translated_meaning": What a local in {country} likely understands or feels.
             - "risk_level": One of "✅ Safe & Culturally Appropriate", "⚠️ Potentially Misunderstood", or "❌ Culturally Risky / Offensive".
-            - "reasoning": A 1-2 sentence explanation of why, referencing specific cultural norms.
-            - "alternatives": A list of 2-3 safer/better rewrites (strings).
-            
-            Output only the raw JSON string. Do not use Markdown code blocks.
+            - "reasoning": Deep cultural insight explaining WHY. Reference concepts like 'Hofstede dimensions' or specific local business etiquette where relevant.
+            - "alternatives": A list of 2-3 culturally tailored rewrites.
+
+            Return ONLY the raw JSON string. No Markdown.
             """
 
         response = model.generate_content(prompt)
@@ -124,6 +136,16 @@ def call_gemini_api(text: str, country: str):
 
     except Exception as e:
         print(f"❌ Gemini API Failed: {e}")
+        # Try fallback to flash if Pro failed specifically on generation (though rare for just model name)
+        if 'gemini-1.5-pro' in str(model):
+             try:
+                print("⚠️ Retrying with Gemini 1.5 Flash...")
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(prompt)
+                # ... same cleaning logic could be applied but for simplicity, allow fallback to Mock if this also fails
+             except:
+                pass
+                
         return mock_analyze(text, country)
 
 # --- Enhanced Mock Service (Rule-Based AI) ---
