@@ -1,0 +1,286 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  ShieldCheck, 
+  Zap, 
+  Search, 
+  Accessibility, 
+  TrendingUp,
+  ChevronLeft,
+  AlertCircle,
+  CheckCircle2
+} from 'lucide-react';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { RadarChart } from '@/components/ui/RadarChart';
+
+export default function Dashboard() {
+  const [analysis, setAnalysis] = useState<any>(null);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem('lastAnalysis');
+    if (saved) {
+      try {
+        setAnalysis(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse analysis data", e);
+      }
+    }
+  }, []);
+
+  if (!analysis || !analysis.scores) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 bg-neon-blue rounded-full mb-4 shadow-[0_0_20px_rgba(0,242,255,0.5)]" />
+          <p className="text-white/40 tracking-widest uppercase text-xs">Calibrating Analysis...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const scores = analysis.scores;
+  const scoreItems = [
+    { label: 'Design', value: scores.design || 0, icon: ShieldCheck, color: 'text-blue-400' },
+    { label: 'Performance', value: scores.performance || 0, icon: Zap, color: 'text-yellow-400' },
+    { label: 'SEO', value: scores.seo || 0, icon: Search, color: 'text-green-400' },
+    { label: 'Accessibility', value: scores.accessibility || 0, icon: Accessibility, color: 'text-purple-400' },
+    { label: 'Conversion', value: scores.conversion || 0, icon: TrendingUp, color: 'text-pink-400' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#030303] text-white p-6 md:p-12 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6"
+        >
+          <div>
+            <Link href="/" className="flex items-center text-white/40 hover:text-white mb-4 transition-colors group">
+              <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> Back to Audit
+            </Link>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+              Analysis <span className="text-neon-blue">Report</span>
+            </h1>
+            <p className="text-white/60 mt-2 font-mono text-sm tracking-tighter">REF_ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="px-4 py-2 bg-neon-blue/10 text-neon-blue rounded-full text-xs font-bold tracking-widest uppercase border border-neon-blue/20">
+              Verified Analysis
+            </div>
+          </div>
+        </motion.header>
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* Left Column: Overall Score & Metrics */}
+          <div className="lg:col-span-4 space-y-8">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="glass p-8 rounded-3xl text-center relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-neon-blue/5 group-hover:bg-neon-blue/10 transition-colors" />
+              <h3 className="text-lg font-medium text-white/60 mb-8">Overall Rating</h3>
+              <div className="relative inline-flex items-center justify-center">
+                <svg className="w-48 h-48">
+                  <circle
+                    className="text-white/5"
+                    strokeWidth="12"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="86"
+                    cx="96"
+                    cy="96"
+                  />
+                  <motion.circle
+                    className="text-neon-blue"
+                    strokeWidth="12"
+                    strokeDasharray={540}
+                    initial={{ strokeDashoffset: 540 }}
+                    animate={{ strokeDashoffset: 540 - (540 * (analysis.overallRating || 0)) / 10 }}
+                    transition={{ duration: 2, ease: "easeOut" }}
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="86"
+                    cx="96"
+                    cy="96"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-6xl font-black">{analysis.overallRating || 0}</span>
+                  <span className="text-white/40 text-sm uppercase tracking-widest">Score / 10</span>
+                </div>
+              </div>
+              <div className="mt-8 pt-8 border-t border-white/5">
+                <div className="text-3xl font-bold text-neon-purple">{analysis.startupReadinessScore || 0}%</div>
+                <div className="text-xs uppercase tracking-tighter text-white/40">Startup Readiness Score</div>
+              </div>
+            </motion.div>
+
+            {/* Audience Archetypes */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="glass p-8 rounded-3xl"
+            >
+              <h3 className="text-xl font-bold mb-6 text-neon-blue">Audience Archetypes</h3>
+              <div className="space-y-6">
+                {analysis.personas?.map((persona: any) => (
+                  <div key={persona.name} className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-neon-blue/20 transition-colors">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-bold text-neon-blue uppercase tracking-widest">{persona.name}</span>
+                      <span className="text-[10px] font-mono opacity-50">
+                        {persona.investmentReady !== undefined ? `Investment Ready: ${persona.investmentReady ? 'YES' : 'NO'}` : 
+                         persona.frustrationLevel !== undefined ? `Frustration: ${persona.frustrationLevel}/10` :
+                         `Clarity: ${persona.clarityScore}/10`}
+                      </span>
+                    </div>
+                    <p className="text-xs text-white/60 leading-relaxed">{persona.feedback}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="glass p-8 rounded-3xl"
+            >
+              <h3 className="text-xl font-bold mb-6 text-neon-purple">Market Potential</h3>
+              <RadarChart scores={scores} />
+            </motion.div>
+          </div>
+
+          {/* Right Column: Insights & Details */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* Technical Deep Dive */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+              className="glass p-8 rounded-3xl border-neon-blue/20"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold">Technical Architecture</h3>
+                <div className="text-xs font-mono text-neon-blue bg-neon-blue/10 px-3 py-1 rounded-full">
+                  Modernity: {analysis.technicalDeepDive?.modernityScore || 0}/100
+                </div>
+              </div>
+              <p className="text-sm text-white/70 mb-6 leading-relaxed">
+                {analysis.technicalDeepDive?.architecture}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <span className="text-[10px] uppercase tracking-widest text-white/40">Potential Bottlenecks</span>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.technicalDeepDive?.potentialBottlenecks?.map((item: string) => (
+                      <span key={item} className="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded-md border border-red-500/20">{item}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Metrics List */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="grid grid-cols-2 md:grid-cols-5 gap-4"
+            >
+              {scoreItems.map((item) => (
+                <div key={item.label} className="glass p-4 rounded-2xl text-center">
+                  <item.icon className={cn("w-6 h-6 mx-auto mb-2", item.color)} />
+                  <div className="text-xs text-white/40 uppercase tracking-tighter mb-1">{item.label}</div>
+                  <div className="text-xl font-bold">{item.value}/10</div>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Founder Summary */}
+            <div className="glass p-8 rounded-3xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4">
+                <div className="px-3 py-1 bg-neon-purple/20 text-neon-purple text-[10px] font-black uppercase tracking-widest rounded-full">AI Executive Summary</div>
+              </div>
+              <h3 className="text-2xl font-bold mb-4">Founder Summary</h3>
+              <p className="text-lg text-white/80 leading-relaxed italic">
+                "{analysis.founderSummary}"
+              </p>
+            </div>
+
+            {/* Quick Wins & Roadmap */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="glass p-8 rounded-3xl border-neon-blue/10">
+                <div className="flex items-center gap-2 mb-6 text-neon-blue">
+                  <Zap size={24} />
+                  <h3 className="text-xl font-bold">Quick Wins</h3>
+                </div>
+                <ul className="space-y-4">
+                  {analysis.quickWins?.map((win: string, i: number) => (
+                    <li key={i} className="flex gap-3 text-white/70 text-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-neon-blue mt-1.5 shrink-0" />
+                      {win}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="glass p-8 rounded-3xl border-neon-purple/10">
+                <div className="flex items-center gap-2 mb-6 text-neon-purple">
+                  <TrendingUp size={24} />
+                  <h3 className="text-xl font-bold">Long-term Roadmap</h3>
+                </div>
+                <ul className="space-y-4">
+                  {analysis.longTermRoadmap?.map((item: string, i: number) => (
+                    <li key={i} className="flex gap-3 text-white/70 text-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-neon-purple mt-1.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Actionable Improvements */}
+            <div className="glass p-8 rounded-3xl">
+              <h3 className="text-2xl font-bold mb-8">Strategy & Execution</h3>
+              <div className="space-y-4">
+                {analysis.improvements?.map((imp: any, i: number) => (
+                  <div key={i} className="p-6 bg-white/5 rounded-2xl border border-white/5 hover:border-neon-blue/10 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-4">
+                        <div className={cn(
+                          "w-2 h-2 rounded-full",
+                          imp.priority === 'High' ? 'bg-red-500' : imp.priority === 'Medium' ? 'bg-yellow-500' : 'bg-blue-500'
+                        )} />
+                        <span className="text-white/90 font-bold uppercase">{imp.task}</span>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md",
+                        imp.priority === 'High' ? 'bg-red-500/20 text-red-500' : imp.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-blue-500/20 text-blue-500'
+                      )}>
+                        {imp.priority} Priority
+                      </span>
+                    </div>
+                    <p className="text-sm text-white/60 mb-3">{imp.reason}</p>
+                    <div className="text-[10px] uppercase tracking-tighter text-neon-blue">Expected Impact: {imp.impact}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}

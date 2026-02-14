@@ -1,62 +1,36 @@
-# M.A.R.K – Neural Intelligence Kernel
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-M.A.R.K is a high-performance, professional AI assistant built with a futuristic 3D interface and a resilient neural backend. Designed for researchers, developers, and power users, it provides expert-level synthesis powered by the latest large language models.
+## Getting Started
 
-![M.A.R.K Banner](https://img.shields.io/badge/Neural-Kernel-6366f1?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Operational-emerald?style=for-the-badge)
+First, run the development server:
 
-## 🚀 Key Features
-
-### 1. Immersive 3D Experience
-- **Neural Particle Field**: A dynamic, interactive 3D background powered by **Three.js** and **React Three Fiber**.
-- **Futuristic HUD UI**: A sleek, glassmorphism-based interface designed for maximum professional focus.
-- **Cinematic Animations**: Smooth, physics-based transitions and reveal animations via **Framer Motion**.
-
-### 2. Intelligent Neural Backend
-- **Resilient Model Routing**: Automatically cycles through high-performance free models on OpenRouter (Qwen 3, Gemma 3, etc.) to ensure 100% uptime.
-- **Self-Healing Fallbacks**: Automatically detects rate limits (429) or provider errors and switches to the next available "neural node."
-- **Expert Context**: Specifically tuned for research, data analysis, and technical briefing.
-
-### 3. Advanced Interactions
-- **Voice Intelligence**: Native speech-to-text integration for hands-free commanding.
-- **Biometric Aesthetic**: Secure-link status indicators and timestamped, verified kernel logs.
-- **Responsive Design**: Fully optimized for desktop workstations and mobile neural links.
-
-## 🛠 Tech Stack
-
-- **Framework**: [Next.js 15+](https://nextjs.org) (App Router)
-- **3D Rendering**: [Three.js](https://threejs.org), [React Three Fiber](https://docs.pmnd.rs/react-three-fiber)
-- **Animation**: [Framer Motion](https://www.framer.com/motion/)
-- **AI Integration**: [OpenRouter API](https://openrouter.ai) (OpenAI SDK)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com) & [Lucide Icons](https://lucide.dev)
-
-## ⚡️ Getting Started
-
-### 1. Clone & Install
-```bash
-git clone <repository-url>
-cd M.A.R.K
-npm install
-```
-
-### 2. Environment Setup
-Create a `.env.local` file in the root directory:
-```env
-OPENROUTER_API_KEY=your_api_key_here
-```
-
-### 3. Run Development Server
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to initialize the kernel.
 
-## 📁 Project Structure
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-- `src/app`: Application routes (Home & Chat).
-- `src/components`: UI components (ChatInput, ChatMessage, Scene3D).
-- `src/lib`: Core AI configuration and logic.
-- `src/app/api/chat`: Resilient backend routing with model fallback logic.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## 📜 License
-© 2026 M.A.R.K Neural Systems • All Rights Reserved.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
